@@ -57,6 +57,68 @@ namespace MiPrimeraAPI.Repository
             return resultados;
         }
 
+        public static bool UpdateStockbyId(int id,int stock)
+        {
+            bool resultado = false;
+
+            using (SqlConnection sqlConnection = new SqlConnection(ConnectionString))
+            {
+                SqlParameter idParameter = 
+                    new SqlParameter("id", System.Data.SqlDbType.BigInt)
+                    { Value = id };
+                
+                using (SqlCommand sqlCommand = new SqlCommand(
+                    "SELECT Stock FROM Producto WHERE Id=@id", sqlConnection))
+                {
+                    sqlCommand.Parameters.Add(idParameter);
+                    
+                    var stockResult = 0;
+
+                    sqlConnection.Open();
+                    using (SqlDataReader dataReader = sqlCommand.ExecuteReader())
+                    {
+                        //Me aseguro que haya filas
+                        if (dataReader.HasRows)
+                        {
+                            while (dataReader.Read())
+                            {
+                                stockResult=Convert.ToInt32(dataReader["Stock"]);
+
+                                stockResult -= stock;
+                            
+                            }
+                        }
+                    }
+
+                    string queryUpdate = "UPDATE [SistemaGestion].[dbo].[Producto]" +
+                   "SET Stock = @stock" +
+                   "WHERE Id=@id";
+
+                    SqlParameter stockParameter = 
+                        new SqlParameter("stock", System.Data.SqlDbType.BigInt)
+                        { Value = stockResult };
+                   
+                    sqlConnection.Open();
+
+                    using (SqlCommand cmdUpdate = new SqlCommand(queryUpdate, sqlConnection))
+                    {
+                        cmdUpdate.Parameters.Add(stockParameter);
+
+                        int numberRowsUpdate = sqlCommand.ExecuteNonQuery();
+
+                        if (numberRowsUpdate > 0)
+                        {
+                            resultado = true;
+                        }
+                    }
+                    sqlConnection.Close();
+                }
+            }
+            return resultado;
+        }
+
+
+
         //ALTA DE PRODUCTOS
         public static bool altaProductos(Producto producto)
         {
@@ -64,7 +126,7 @@ namespace MiPrimeraAPI.Repository
 
             using (SqlConnection sqlConnection = new SqlConnection(ConnectionString))
             {
-                string queryInsert = "INSET INTO [SistemaGestion].[dbo].[Prodcuto]" +
+                string queryInsert = "INSERT INTO [SistemaGestion].[dbo].[Prodcuto]" +
                     "(Descripciones,Costo,PrecioVenta,Stock) VALUES" +
                     "(@descripcionesParameter,@costoParameter,@precioVentaParameter," +
                     "@stockParameter)";
@@ -108,8 +170,6 @@ namespace MiPrimeraAPI.Repository
 
                 SqlParameter idParameter = new SqlParameter("id", System.Data.SqlDbType.BigInt) { Value = producto.Id };
                 SqlParameter descripcionesParameter = new SqlParameter("Descripciones", System.Data.SqlDbType.VarChar) { Value = producto.Descripciones};
-
-
 
                 sqlConnection.Open();
 

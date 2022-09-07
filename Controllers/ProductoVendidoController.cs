@@ -19,14 +19,19 @@ namespace MiPrimeraAPI.Controllers
         }
 
         
-        [HttpPost(Name = "AltaProductoVendido")]
-        public bool CrearProductoVendido([FromBody] ProductoVendido productovendido)
-        {
-            return ProductoVendidoHandler.CrearProductoVendido(new ProductoVendido
-            {
-                Stock = productovendido.Stock
-            });
+        //[HttpPost(Name = "AltaProductoVendido")]
+        //public bool CrearProductoVendido([FromBody] ProductoVendido productovendido)
+        //{
+        //    return ProductoVendidoHandler.CrearProductoVendido(new ProductoVendido
+        //    {
+        //        Stock = productovendido.Stock
+        //    });
 
+        //}
+        [HttpPost]
+        public bool VenderProductosIdUsuarios(List<Producto> producto,int idUsuario)
+        {
+            return ProductoVendidoHandler.VenderProductosIdUsuarios(producto,idUsuario);
         }
 
         //[HttpPut(Name = "ModificarUsuario")]

@@ -10,9 +10,10 @@ namespace MiPrimeraAPI.Repository
     public class ProductoVendidoHandler
     {
         public const string ConnectionString =
-            "Server=DESKTOP-P6TBBSQ;" +
-            "Initial Catalog=SistemaGestion;" +
-            "Trusted_Connection=True";
+        "Server=DESKTOP-P6TBBSQ;" +
+        "Initial Catalog=SistemaGestion;" +
+        "Encrypt = False;" +
+        "Trusted_Connection=True";
 
         //CONSULTA DE PRODUCTO VENDIDO
         public static List<ProductoVendido> GetProductoVendido()
@@ -57,7 +58,7 @@ namespace MiPrimeraAPI.Repository
 
             using (SqlConnection sqlConnection = new SqlConnection(ConnectionString))
             {
-                string queryInsert = "INSET INTO [SistemaGestion].[dbo].[ProductoVendido]" +
+                string queryInsert = "INSERT INTO [SistemaGestion].[dbo].[ProductoVendido]" +
                     "(Stock) VALUES" +
                     "(@stockParameter)";
 
@@ -89,10 +90,11 @@ namespace MiPrimeraAPI.Repository
 
             using (SqlConnection sqlConnection = new SqlConnection(ConnectionString))
             {
-                string queryInsert = "INSERT INTO [SistemaGestion].[dbo].[Venta]" +
+                //Inserto una nueva venta
+                 string queryInsert = "INSERT INTO [SistemaGestion].[dbo].[Venta]" +
                     "(Comentarios) VALUES" +
-                    "(@comentariosParameter)";
-                
+                    "(@comentariosParameter);SELECT SCOPE_IDENTITY();";
+                        
                 SqlParameter comentariosParameter = new SqlParameter("comentariosParameter", System.Data.SqlDbType.VarChar) { Value = idUsuario };
                 
 
@@ -101,12 +103,58 @@ namespace MiPrimeraAPI.Repository
                 using (SqlCommand sqlCommand = new SqlCommand(queryInsert, sqlConnection))
                 {
                     sqlCommand.Parameters.Add(comentariosParameter);
-              
 
-                    int numberOfRows = sqlCommand.ExecuteNonQuery();
+                    var numberOfRows = sqlCommand.ExecuteScalar();
 
-                    if (numberOfRows > 0)
+                    if (numberOfRows != null)
                     {
+                        //Parseamos el objeto,transformamos el objeto a decimal
+                        decimal idVenta = (decimal)numberOfRows;
+                        
+                        string queryProductoVendido = "INSERT INTO [SistemaGestion].[dbo].[ProductoVendido]" +
+                        "(Stock),(IdProducto),(IdVenta) Values" +
+                        "(@stockParameter),(@idproducto),(@idventa)";
+
+                        foreach (var producto in listaProducto)
+                        {
+                            using (SqlCommand cmdProductoVendido = 
+                               new SqlCommand(queryProductoVendido, sqlConnection))
+                            {
+                                SqlParameter idParameterProducto = 
+                                    new SqlParameter("idproducto", System.Data.SqlDbType.BigInt)
+                                    { Value = producto.Id };
+
+                                SqlParameter idParameterVenta = 
+                                    new SqlParameter("idventa", System.Data.SqlDbType.BigInt) 
+                                    { Value = idVenta };
+
+                                SqlParameter stockParameter = 
+                                    new SqlParameter("stockParameter", System.Data.SqlDbType.BigInt) 
+                                    { Value =producto.Stock };
+
+                                cmdProductoVendido.Parameters.Add(idParameterProducto);
+                                cmdProductoVendido.Parameters.Add(idParameterVenta);
+                                cmdProductoVendido.Parameters.Add(stockParameter);
+
+                                int filaInsertadaProductoVendido = cmdProductoVendido.ExecuteNonQuery();
+
+                                if (filaInsertadaProductoVendido > 0)
+                                {
+                                    var queryResult = ProductoHandler.GetProductos();
+                                    
+                                }
+                            }
+                            bool updateStock = ProductoHandler.UpdateStockbyId(producto.Id, producto.Stock);
+
+                            if (updateStock)
+                            {
+                                Console.WriteLine("Stock Actualizado");
+                            }
+                            else
+                            {
+                                Console.Write("Ocurrio un error !!!");
+                            }
+                        }
                         resultado = true;
                     }
                 }
